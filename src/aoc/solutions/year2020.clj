@@ -1,6 +1,43 @@
 (ns aoc.year2020
   (:require [aoc.util :as util]
             [clojure.string :as string]))
+
+;; day 1
+(defn find-2020
+  [list num check]
+  (let [relevant-num (- check num)
+        exists? (some #{relevant-num} list)]
+    (when exists?
+      (* num relevant-num))))
+
+(defn loop-2020
+  [check numbers next-step?]
+  (loop [nums  numbers]
+    (let [num (or (first nums) 0)
+          x-nums (rest nums)
+          relevant-num (- check num)
+          extra-num (if next-step?
+                      (loop-2020 relevant-num numbers false)
+                      (find-2020 x-nums num check))]
+      (cond
+        (not (seq nums))
+        "whoopsie"
+
+        (and next-step?
+             (number? extra-num))
+        (* extra-num num)
+
+        (number? extra-num)
+        extra-num
+
+        :default
+        (recur x-nums)))))
+
+(defn day1
+  []
+  (let [data (util/read-file "2020/day1.txt" read-string)]
+    {:part1 (loop-2020 2020 data)
+     :part2 (loop-2020 2020 data true)}))
 ;; day 5
 (defn do-work
   [a [start end]]
