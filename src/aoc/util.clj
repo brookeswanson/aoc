@@ -3,8 +3,6 @@
             [clojure.java.io :as io]
             [clojure.string :as string]))
 
-
-
 (defn read-file
   [file-name parse-fn]
   (->> file-name
@@ -16,20 +14,17 @@
 (defn simple-read-file
   ([file-name]
    (simple-read-file file-name true))
-  ([file-name split-lines]
+  ([file-name split-lines?]
    (cond-> (slurp (io/resource file-name))
-     split-lines (string/split-lines))))
+     split-lines? (string/split-lines))))
 
 (defn regex-split
-  [file-name regex map-keys]
-  (read-file file-name
-             (comp
-              (partial zipmap map-keys)
-              rest
-              (partial re-find regex))))
-(defn simple-loop
-  [])
-
-(defn for-loop
-  [])
-
+  ([file-name regex map-keys]
+   (regex-split regex map-keys read-string))
+  ([file-name regex map-keys parse-fn]
+   (read-file file-name
+              (comp
+               (partial zipmap map-keys)
+               (partial map parse-fn)
+               rest
+               (partial re-find regex)))))

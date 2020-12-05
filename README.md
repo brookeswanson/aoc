@@ -1,22 +1,25 @@
-# aoc
+# Advent of Code
 
-A Clojure library designed to ... well, that part is up to you.
+A collection of clojure solutions to advent of code problems. This is a bare bones clojure project that includes a couple dependencies that might be helpful given the problem types.
 
-## Usage
+## Code  
+### Input 
+Lives under resources/$YEAR/$DAY
 
-FIXME
+### Code Organization
 
-## License
+#### Reading files
+Code lives under `src/aoc/util.clj`
 
-Copyright © 2019 FIXME
+* `read-file` takes a file-name and a parse-ing function
+* `simple-read-file` takes a file-name and an option split-lines? param
+* `regex-split` takes a file-name, a regex, and map-keys, it takes the capture groups and maps them to the given keys and reads the string. If passed an optional parse-fn that will be used instead of the read-string.
 
-This program and the accompanying materials are made available under the
-terms of the Eclipse Public License 2.0 which is available at
-http://www.eclipse.org/legal/epl-2.0.
+#### Solutions
+Code lives under `src/aoc/solutions/yearYYYY.clj`
 
-This Source Code may also be made available under the following Secondary
-Licenses when the conditions for such availability set forth in the Eclipse
-Public License, v. 2.0 are satisfied: GNU General Public License as published by
-the Free Software Foundation, either version 2 of the License, or (at your
-option) any later version, with the GNU Classpath Exception which is available
-at https://www.gnu.org/software/classpath/license.html.
+Most fn's formatted to return a map of
+```clojure
+{:part1 "answer1"
+ :part2 "answer2"}
+```
