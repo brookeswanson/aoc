@@ -73,6 +73,35 @@
     {:day1 (count (filter :between? processed))
      :day2 (count (filter :meow? processed))}))
 
+;; day 3
+(defn ->hit-or-miss
+  [{:keys [right]} idx slice]
+  (let [location (* right (inc idx))]
+    (case (get slice (mod location (count slice)))
+      \. 0
+      \# 1
+      0)))
+
+(defn day3-parse
+  [stuff
+   {:keys [down]
+    :as slope}]
+  (let [slices (->> (rest stuff) (partition (or down 1)) (map last))]
+    (transduce (map-indexed
+                (partial ->hit-or-miss slope)) + 0 slices)))
+
+(defn day3
+  []
+  (let [data (util/read-file "2020/day3.txt" (partial into []))]
+    {:part1 (day3-parse {:right 3})
+     :part2 (apply +
+                   (partial day3-parse data)
+                   [{:right 3}
+                    {:right 5}
+                    {:down 2 :right 1}
+                    {:right 1}
+                    {:right 7}])}))
+
 ;; day 5
 (defn do-work
   [a [start end]]

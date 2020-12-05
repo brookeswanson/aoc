@@ -2,10 +2,6 @@
   (:require [clojure.set :as clj-set]
             [clojure.string :as string]))
 
-(def day3 (->> (slurp "day3.txt")
-               (clojure.string/split-lines)
-               (map (partial into []))))
-
 (def day4 (-> (slurp "day4.txt")
               (clojure.string/split #"\n\n")))
 
@@ -45,80 +41,3 @@
          (re-find #"#[0-9a-f]{6}" hcl)
          (re-find #"^\d{9}$" pid)
          (valid-height? hgt))))
-
-(defn hit?
-  [test-car]
-  (= test-car \#))
-
-(defn ->hit-or-miss
-  [{:keys [right]} idx slice]
-  (let [location (* right (inc idx))]
-    (case (get slice (mod location (count slice)))
-      \. 0
-      \# 1
-      0)))
-
-(defn day3-transduced
-  [stuff
-   {:keys [down]
-    :as slope}]
-  (let [slices (->> (rest stuff) (partition (or down 1)) (map last))]
-    (transduce (map-indexed
-                (partial ->hit-or-miss slope)) + 0 slices)))
-
-(defn day3-stuff
-  [stuff
-   {:keys [right down]}]
-  (let [mod-num (count (first stuff))
-        starting-remaining (->> (rest stuff) (partition (or down 1)) (map last))]
-    (loop [hit-count 0
-           remaining starting-remaining
-           curr-pos 0]
-      (if (not (seq remaining))
-        hit-count
-        (let [curr-level (first remaining)
-              leftovers (rest remaining)
-              new-level (+ curr-pos right)
-              test-car (get curr-level (mod new-level mod-num))]
-          (recur (if (hit? test-car) (inc hit-count) hit-count)
-                 leftovers
-                 new-level))))))
-
-(defn add-meow?
-  [{:keys [min max char location]
-    :as data}]
-  (let [min-loc (get location (dec min))
-        max-loc (get location (dec max))]
-    (assoc data
-           :meow?
-           (and (or (= char min-loc)
-                    (= char max-loc))
-                (not= min-loc max-loc)))))
-
-(defn add-between?
-  [{:keys [min max char pass]
-    :as data}]
-  (let [frequency (get pass char 0)]
-    (assoc data :between? (<=  min frequency max))))
-
-(defn parse-row
-  [row]
-  (let [[_ min max char pass] (re-find #"([0-9]+)\-([0-9]+) ([A-Za-z]): ([A-Za-z]+)" row)
-        letters (frequencies (into [] pass))
-        location (into [] pass)
-        relevant-char (first (into #{} char))]
-    (-> {:min (read-string min)
-         :max (read-string max)
-         :char relevant-char 
-         :location location
-         :pass letters}
-        add-between?
-        add-meow?)))
-
-(defn day2
-  []
-  (->> (slurp "day2.txt")
-       (clojure.string/split-lines)
-       (map parse-row)
-       (filter :meow?)
-       count))
