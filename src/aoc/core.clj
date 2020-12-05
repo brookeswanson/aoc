@@ -122,33 +122,3 @@
        (map parse-row)
        (filter :meow?)
        count))
-
-(defn find-2020
-  [list num check]
-  (let [relevant-num (- check num)
-        exists? (some #{relevant-num} list)]
-    (when exists?
-      (* num relevant-num))))
-
-(defn loop-2020
-  [check numbers next-step?]
-  (loop [nums  numbers]
-    (let [num (or (first nums) 0)
-          x-nums (rest nums)
-          relevant-num (- check num)
-          extra-num (if next-step?
-                      (loop-2020 relevant-num numbers false) ;;  * product of 2 numbers in the thing 
-                      (find-2020 x-nums num check))] ;; * product of 2 numbers 
-      (cond
-        (not (seq nums))
-        "whoopsie"
-
-        (and next-step?
-             (number? extra-num))
-        (* extra-num num)
-
-        (number? extra-num)
-        extra-num
-
-        :default
-        (recur x-nums)))))

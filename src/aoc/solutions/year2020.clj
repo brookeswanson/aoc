@@ -38,6 +38,41 @@
   (let [data (util/read-file "2020/day1.txt" read-string)]
     {:part1 (loop-2020 2020 data)
      :part2 (loop-2020 2020 data true)}))
+
+;; day 2
+(defn add-filters
+  [{:keys [min max char freqs pass]
+    :as data}]
+  (let [min-loc (get pass (dec min))
+        max-loc (get pass (dec max))
+        frequency (get freqs char 0)]
+    (assoc data
+           :between? (<=  min frequency max)
+           :meow? (and (or (= char min-loc)
+                           (= char max-loc))
+                       (not= min-loc max-loc)))))
+
+(defn parse-row
+  [{:keys [pass]
+    :as data}]
+  (-> data
+      (assoc :freqs #(frequencies (into [] pass)))
+      (update :min read-string)
+      (update :max read-string)
+      (update :char first)
+      (update :pass (partial into []))
+      add-filters))
+
+(defn day2
+  []
+  (let [data (util/regex-split "2020/day2.txt"
+                               #"([0-9]+)\-([0-9]+) ([A-Za-z]): ([A-Za-z]+)"
+                               [:min :max :char :pass]
+                               identity)
+        processed (map parse-row data)]
+    {:day1 (count (filter :between? processed))
+     :day2 (count (filter :meow? processed))}))
+
 ;; day 5
 (defn do-work
   [a [start end]]
