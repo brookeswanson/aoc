@@ -1,7 +1,7 @@
 (ns aoc.year2020
   (:require [aoc.util :as util]
             [clojure.string :as string]))
-
+;; day 5
 (defn do-work
   [a [start end]]
   (let [value (/ (- end start) 2)]
@@ -50,7 +50,8 @@
   []
   (let [data (util/regex-split "2020/day5.txt"
                                #"([BF]{7})([LR]{3})"
-                               [:row :seat])
+                               [:row :seat]
+                               identity)
         seats (sort (into [] (comp (map ->seat)
                                    (map :seat-id))
                           data))]
@@ -58,3 +59,18 @@
      (apply max seats)
      :part2 (range? seats)}))
 
+;; day 6
+(defn day6-p2
+  [data])
+
+(defn day6-p1
+  [data])
+
+(defn day6
+  []
+  (let [data (util/regex-split "2020/day6.txt"
+                               #""
+                               []
+                               identity)]
+    {:part1 (day6-p1 data)
+     :part2 (day6-p2 data)}))
