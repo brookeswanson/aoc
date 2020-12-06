@@ -1,6 +1,10 @@
 (ns aoc.year2015
-  (:require [aoc.util :as util]))
+  (:require [aoc.util :as util]
+            [clojure.string :as string]
+            [buddy.core.hash :as buddy.hash]
+            [buddy.core.codecs :as buddy.codecs]))
 
+;; day1
 (defn day1
   []
   (let [data (util/simple-read-file "2015/day1.txt" false)]
@@ -18,7 +22,7 @@
          (if (< new-floor 0)
            (inc index)
            (recur rest new-floor))))}))
-
+;; day 2
 (defn ->areas
   [{:keys [l w h]}]
   (let [areas [(* l h) (* h w) (* w l)]
@@ -41,6 +45,7 @@
     {:part1 (transduce (map ->areas) + 0 data)
      :part2 (transduce (map ->ribbon-feet) + 0 data)}))
 
+;; day 3
 (defn move
   [[x y] c]
   (case c
@@ -74,5 +79,22 @@
                           (visit-houses a)
                           (visit-houses b))))}))
 
-(day3)
-(partition 2 (util/simple-read-file "2015/day3.txt" false))
+;; day 4
+(defn ->lowest-value
+  [test secret start]
+  (loop [ndx start]
+    (let [digest (-> (str secret ndx)
+                     buddy.hash/md5
+                     buddy.codecs/bytes->hex)]
+      (if (string/starts-with? digest test)
+        ndx
+        (recur (inc ndx))))))
+
+(defn day4 []
+  (let [secret "iwrupvqb"
+        low-val-1 (->lowest-value "00000" secret 1)]
+    {:part1 low-val-1
+     :part2 (->lowest-value "000000" secret low-val-1)}))
+
+;; day 5
+(defn day5 [])
