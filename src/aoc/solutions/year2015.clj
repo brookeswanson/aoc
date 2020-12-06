@@ -1,5 +1,6 @@
 (ns aoc.year2015
   (:require [aoc.util :as util]
+            [clojure.set :as clj-set]
             [clojure.string :as string]
             [buddy.core.hash :as buddy.hash]
             [buddy.core.codecs :as buddy.codecs]))
@@ -97,4 +98,21 @@
      :part2 (->lowest-value "000000" secret low-val-1)}))
 
 ;; day 5
-(defn day5 [])
+(def vowels [\a \e \i \o \u])
+
+(defn nice-2?
+  [test-str]
+  (and (re-find #"([a-z]{2}).*\1" test-str)
+       (re-find #"([a-z])[a-z]\1" test-str)))
+
+(defn nice?
+  [test-str]
+  (let [str-set (apply + (vals (select-keys (frequencies test-str) vowels)))]
+    (and (not (re-find #"ab|cd|pq|xy" test-str))
+         (re-find #"([a-z])\1" test-str)
+         (<= 3 str-set))))
+
+(defn day5 []
+  (let [data (util/simple-read-file "2015/day5.txt")]
+    {:part1 (count (filter nice? data))
+     :part2 (count (filter nice-2? data))}))
