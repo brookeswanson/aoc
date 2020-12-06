@@ -1,5 +1,7 @@
 (ns aoc.year2020
   (:require [aoc.util :as util]
+            [buddy.core.hash :as b.hash]
+            [buddy.core.codecs :as b.codecs]
             [clojure.set :as clj-set]
             [clojure.string :as string]))
 
@@ -201,17 +203,29 @@
      :part2 (range? seats)}))
 
 ;; day 6
-(defn day6-p2
-  [data])
+(defn answers->count
+  [answers]
+  (->> answers
+       (map (partial into #{}))
+       (apply clj-set/intersection)
+       count))
 
-(defn day6-p1
-  [data])
+(defn ->day6-p2
+  [data]
+  (transduce (comp (map #(string/split % #"\n"))
+                   (map answers->count))
+             + 0 data))
+
+(defn ->day6-p1
+  [data]
+  (transduce
+   (comp (map #(string/replace % #"\n" ""))
+         (map #(count (into #{} %))))
+   + 0
+   data))
 
 (defn day6
   []
-  (let [data (util/regex-split "2020/day6.txt"
-                               #""
-                               []
-                               identity)]
-    {:part1 (day6-p1 data)
-     :part2 (day6-p2 data)}))
+  (let [data (string/split (util/simple-read-file "2020/day6.txt" false) #"\n\n")]
+    {:part1 (->day6-p1 data)
+     :part2 (->day6-p2 data)}))
