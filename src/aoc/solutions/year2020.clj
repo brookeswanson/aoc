@@ -1,5 +1,6 @@
-(ns aoc.year2020
+(ns aoc.solutions.year2020
   (:require [aoc.util :as util]
+            [aoc.math :as math]
             [buddy.core.hash :as b.hash]
             [buddy.core.codecs :as b.codecs]
             [clojure.set :as clj-set]
