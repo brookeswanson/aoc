@@ -388,3 +388,15 @@
                   (into []))]
     {:part1 (repeated-instruction data)
      :part2 (find-borked-instruction data)}))
+
+;; day9
+(defn day9->parse
+  [row]
+  row)
+
+(defn day9
+  []
+  (let [data (->> (util/simple-read-file "2020/day9-example.txt")
+                  (map day9->parse))]
+    {:part1 data
+     :part2 ""}))
