@@ -230,3 +230,96 @@
   (let [data (string/split (util/simple-read-file "2020/day6.txt" false) #"\n\n")]
     {:part1 (->day6-p1 data)
      :part2 (->day6-p2 data)}))
+
+
+;;day 7
+(defn extras->bag-colors
+  [extra]
+  (if (not (string/blank? extra))
+    (->> (string/split extra #", ")
+         (map #(re-find #"(\d+) ([\w\s]+) bag.*" %))
+         (map rest)
+         (map (fn [[k v]]
+                [v (math/->int k)]))
+         (remove nil?)
+         (into {}))
+    {}))
+
+(defn ->parseable-map
+  [{:keys [bag-color extras amount contains-color]
+    :as rule}]
+  (let [new-extras (assoc extras contains-color (math/->int amount))
+        contains (into #{} (keys new-extras))]
+    (if bag-color
+      {:color bag-color
+       :contains contains
+       :shiny-gold? (boolean (some #{"shiny gold"} contains))
+       :extras new-extras}
+      {})))
+
+(defn contains-color?
+  [colors
+   {:keys [contains]}]
+  (boolean (some colors contains)))
+
+
+(defn calculate-bag
+  [bag-vals bag-item]
+  (transduce (map (fn [[k v]]
+                    (* (get bag-vals k) v))) + 1 (:extras bag-item)))
+
+(defn calculable?
+  [terminal-bags bag]
+  (clj-set/subset? (:contains bag) terminal-bags))
+
+(defn new-bags
+  [bag-vals find-calculable-bags]
+  (println bag-vals)
+  (into bag-vals (map (juxt :color (partial calculate-bag bag-vals))) find-calculable-bags))
+
+(defn do-part-2
+  [data data-map terminal-vals]
+  (let [bag-count (into #{} (keys data-map))
+        terminal-vals-set (into #{} (keys terminal-vals))]
+    (loop [terminal-bags terminal-vals-set
+           bag-vals terminal-vals]
+      (let [find-calculable-bags (filter (partial calculable? terminal-bags) data)
+            new-bag-vals (new-bags bag-vals find-calculable-bags)
+            new-terminal-bags (into terminal-bags (map :color find-calculable-bags))]
+        (if (or (not (seq find-calculable-bags))
+                (clj-set/subset? bag-count new-terminal-bags))
+          new-bag-vals
+          (recur new-terminal-bags
+                 new-bag-vals))))))
+
+
+(defn ->find-gold
+  [data]
+  (loop [matches (into #{} (map :color (filter :shiny-gold? data)))
+         found matches]
+    (if-not (seq matches)
+      (count found)
+      (let [new-matches (into #{} (map :color (filter (partial contains-color? matches) data)))]
+        (recur new-matches
+         (into #{} (concat found new-matches)))))))
+
+
+(defn day7
+  [file]
+  (let [terminal-bag-vals (->> (util/simple-read-file file)
+                               (filter #(re-find #"contain no" %))
+                               (map #(re-find #"(\w+ \w+) bags.*" %))
+                               (map last)
+                               (map (juxt identity (constantly 1)))
+                               (into {}))
+        data (->> (util/regex-split file
+                                    #"(\w+ \w+) bags? contain (\d+) ([\w ]+) bags?[\.\, ]+(.*)?"
+                                    [:bag-color :amount :contains-color :extras]
+                                    identity)
+                  (map #(update % :extras extras->bag-colors))
+                  (map ->parseable-map)
+                  (filter seq))
+        data-map (dissoc (into {} (map (juxt :color identity) data)) nil)
+        part-2 (do-part-2 data data-map terminal-bag-vals)]
+    {:part1 (->find-gold data)
+     :part2 (dec (get part-2 "shiny gold"))}))
