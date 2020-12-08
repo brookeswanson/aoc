@@ -323,3 +323,68 @@
         part-2 (do-part-2 data data-map terminal-bag-vals)]
     {:part1 (->find-gold data)
      :part2 (dec (get part-2 "shiny gold"))}))
+
+
+;; day 8
+(def up-or-down {\+ +
+                 \- -})
+
+(defn day8-parse
+  [{:keys [cmd direction amt]}]
+  {:cmd (keyword cmd)
+   :direction (get up-or-down (first direction))
+   :amt (math/->int amt)})
+
+(defn ->action
+  [current-ac [ndx {:keys [cmd direction amt]}]]
+  (case cmd
+    :jmp {:next (direction ndx amt)
+          :ac current-ac}
+    :acc {:next (inc ndx)
+          :ac (direction current-ac amt)}
+    :nop {:next (inc ndx)
+          :ac current-ac}
+    {:next (inc ndx)
+     :ac current-ac}))
+
+(defn repeated-instruction
+  [actions]
+  (loop [current-index 0
+         current-ac 0
+         seen-indexes []]
+    (let [event (nth actions current-index)
+          {:keys [next ac]} (->action current-ac event)
+          new-seen (conj seen-indexes current-index)]
+      (cond
+        (some #{next} seen-indexes) ac
+        (>= next (count actions)) {:ac ac}
+        :default
+        (recur next ac new-seen)))))
+
+(defn find-borked-instruction
+  [actions]
+  (loop [[action & xtra-actions]
+         (into [] (filter (fn [[_ {:keys [cmd]}]]
+                            (boolean (some #{cmd} #{:nop :jmp})))
+                          actions))]
+    (let [[ndx {:keys [cmd] :as cmd-map}] action
+          new-cmd (case cmd :jmp :nop :nop :jmp cmd)
+          test-actions (assoc actions ndx [ndx (assoc cmd-map :cmd new-cmd)])
+          repeated (repeated-instruction test-actions)]
+      (if (or (map? repeated)
+              (not (seq xtra-actions)))
+        (:ac repeated)
+        (recur xtra-actions)))))
+
+
+(defn day8
+  []
+  (let [data (->> (util/regex-split "2020/day8.txt"
+                                    #"(\w{3}) (\+|\-)(\d+)"
+                                    [:cmd :direction :amt]
+                                    identity)
+                  (map day8-parse)
+                  (map-indexed vector)
+                  (into []))]
+    {:part1 (repeated-instruction data)
+     :part2 (find-borked-instruction data)}))
