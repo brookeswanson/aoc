@@ -1,5 +1,6 @@
 (ns aoc.year2015
   (:require [aoc.util :as util]
+            [aoc.math :as math]
             [clojure.set :as clj-set]
             [clojure.string :as string]
             [buddy.core.hash :as buddy.hash]
@@ -116,3 +117,58 @@
   (let [data (util/simple-read-file "2015/day5.txt")]
     {:part1 (count (filter nice? data))
      :part2 (count (filter nice-2? data))}))
+
+;; day 6
+(defn day6-p1 [commands array n]
+  (doseq [{:keys [x1 y1 x2 y2 command]} commands
+          x (range x1 x2)
+          y (range y1 y2)
+          :let [idx (+ (* n x) y)]]
+    (case command
+      "turn off" (aset array idx 0)
+      "turn on" (aset array idx 1)
+      "toggle" (aset array idx (bit-flip (aget array idx) 0)))))
+
+(defn day6->parsed
+  [{:keys [command start-x start-y end-x end-y]}]
+  {:command command
+   :x1 (math/->int start-x)
+   :y1 (math/->int start-y)
+   :x2 (inc (math/->int end-x))
+   :y2 (inc (math/->int end-y))})
+
+(defn contained?
+  [{:keys [x1 y1 x2 y2] :as meow} check-box]
+  (not
+   (and (<= x1 (:x1 check-box))
+        (<= y1 (:y1 check-box))
+        (>= x2 (:x2 check-box))
+        (>= x2 (:x2 check-box)))))
+
+(defn filter-silly
+  [data]
+  (loop [[instruction & ins] (reverse data)
+         follow-structs  []]
+    (let [filtered (filter (partial contained? instruction) ins)
+          new-structs (concat [instruction] follow-structs)
+          command (:command instruction)]
+      (if (seq ins)
+        (case command
+          "toggle" (recur ins new-structs)
+          "turn on" (recur filtered new-structs)
+          "turn off" (recur filtered new-structs))
+        follow-structs))))
+
+(defn day6 [file-name n]
+  (let [data (->> (util/regex-split file-name
+                                    #"(\w+\s?\w+) (\d+),(\d+) through (\d+),(\d+)"
+                                    [:command :start-x :start-y :end-x :end-y]
+                                    identity)
+                  (map day6->parsed))
+        lights (into-array (repeat (* n n) 0))
+        _ (day6-p1 data lights n)
+        part-1 (reduce (fn [result idx]
+                         (+ (aget lights idx) result))
+                       0
+                       (range (alength lights)))]
+    {:part1 part-1}))

@@ -393,10 +393,113 @@
 (defn day9->parse
   [row]
   row)
+(def example [35
+              20
+              15
+              25
+              47
+              40
+              62
+              55
+              65
+              95
+              102
+              117
+              150
+              182
+              127
+              219
+              299
+              277
+              309
+              576])
+
+
+(defn get-okay-nums
+  [datums]
+  (into #{} (for [x datums
+                  y (remove #{x} datums)]
+              (+ x y))))
+
+(defn part1
+  [data n]
+  (loop [numbers data]
+    (let [nums (take n numbers)
+          [test & _] (nthrest numbers n)
+          okay-nums (get-okay-nums nums)]
+      (if (some #{test} okay-nums)
+        (recur (rest numbers))
+        test))))
+
+(defn sum-to [data goal]
+  (loop [[curr & xtras] data
+         total 0
+         seen []]
+    (let [new-total (+ curr total)]
+      (cond
+        (= new-total goal)
+        {:success true 
+         :st-end seen}
+
+        (not (seq xtras))
+        {:success false}
+
+        (< total goal)
+        (recur xtras new-total (conj seen curr))
+
+        (> total goal)
+        {:success false}))))
+
+(defn part2
+  [data goal]
+  (loop [nums data]
+    (let [{:keys [st-end success]} (sum-to nums goal)]
+      (if success 
+        (+ (math/coll->max st-end) (math/coll->min st-end))
+        (recur (rest nums))))))
 
 (defn day9
   []
-  (let [data (->> (util/simple-read-file "2020/day9-example.txt")
-                  (map day9->parse))]
-    {:part1 data
-     :part2 ""}))
+  (let [data (->> (util/simple-read-file "2020/day9.txt")
+                  (map math/->int))
+        part-1 (part1 data 25)]
+    {:part1 part-1
+     :part2 (part2 data part-1)}))
+
+;; day 10
+(defn part2-day10
+  [data]
+  (loop [[charger & chargers] data
+         meow []]
+    (if-not (seq chargers)
+      (->> (partition-by (partial = 1) meow)
+           (filter #(some #{1} %))
+           (map count)
+           (map #(case % 4 7 3 4 2 2 1))
+           (apply *))
+      (recur chargers (conj meow (- (first chargers) charger))))))
+
+(defn part1-day10
+  [data]
+  (loop [[a & left] data
+         counts []]
+    (if (seq left)
+      (recur left
+             (conj counts (- (first left) a)))
+      (let [freqs (frequencies counts)]
+        {:part1
+         (* (+ (get freqs 1 0) 1)
+            (+ (get freqs 3 0) 1))
+         :freqs freqs}))))
+
+(defn day10
+  [file-name args]
+  (let [data (->> (util/simple-read-file file-name)
+                  (map math/->int)
+                  (sort))
+        last-data (+ (last data) 3)
+        part2-input (conj (into [0] data) last-data)
+        part1 (part1-day10 data)]
+    {:part1 (:part1 part1)
+     :last last-data
+     :part2 (part2-day10 part2-input)}))
