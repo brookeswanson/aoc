@@ -503,3 +503,127 @@
     {:part1 (:part1 part1)
      :last last-data
      :part2 (part2-day10 part2-input)}))
+
+;; day 11
+(defn ->coords [n index]
+  (let [up (inc (inc index))
+        down (dec index)]
+    (into []
+          (for [x (range down up)
+                y (range down up)
+                :let [idx (+ (* n x) y)]]
+            idx))))
+
+(defn day11->part1
+  [data]
+  (first data))
+
+(defn day11
+  [file-name opts]
+  (let [n (-> (util/simple-read-file file-name) first count)
+        data (into [] (map-indexed vector (util/simple-read-file file-name false)))]
+    {:part1 (day11->part1 data)
+     :n n}))
+
+;; day 12
+(def direction-change {:normal {:east {\L :north
+                                       \R :south}
+                                :west {\L :south
+                                       \R :north}
+                                :north {\L :west
+                                        \R :east}
+                                :south {\L :east
+                                        \R :west}}
+                       :flip {:east :west
+                              :north :south
+                              :south :north
+                              :west :east}
+                       :l-r {\L \R
+                             \R \L}})
+
+
+(defn day12->part1
+  "Expects a collection of instruction maps"
+  [dirs]
+  (loop [[{:keys [dir path amt]} & directions] dirs
+         curr-dir :east
+         totals {:east 0 :west 0 :north 0 :south 0}]
+    (println "curr-dir " curr-dir " totals " totals " dir " dir " amt " amt)
+    (if-not dir
+      {:total
+       (+ (math/abs (- (:west totals) (:east totals)))
+          (math/abs (- (:north totals) (:south totals))))
+       :curr-dir curr-dir
+       :totals totals}
+      (case dir
+        \C (recur directions (path curr-dir) totals)
+        \F (recur directions curr-dir (update totals curr-dir + amt))
+        \N (recur directions curr-dir (update totals :north + amt))
+        \S (recur directions curr-dir (update totals :south + amt))
+        \E (recur directions curr-dir (update totals :east + amt))
+        \W (recur directions curr-dir (update totals :west + amt))))))
+
+
+(defn ->direction-change
+  [{:keys [dir amt]}]
+  (let [parsed-amt (math/->int amt)
+        dir-char (first dir)
+        opposite (get-in direction-change [:l-r dir-char])]
+    (case parsed-amt
+      90 {:dir \C :path #(get-in direction-change [:normal % dir-char]) :test (str dir amt)}
+      270 {:dir \C :path #(get-in direction-change [:normal % opposite]) :test (str dir amt)}
+      180 {:dir \C :path #(get-in direction-change [:flip %]) :test (str dir amt)}
+      :fuck)))
+
+(defn ->parsed-day12
+  [{:keys [dir amt] :as directions}]
+  (let [dir-char (first dir)]
+    (if (some #{dir-char} #{\L \R})
+      (->direction-change directions)
+      {:dir dir-char
+       :amt (math/->int amt)})))
+
+(defn day12
+  [file-name]
+  (let [dirs (->> (util/regex-split file-name
+                                    #"(\w)(\d+)"
+                                    [:dir :amt]
+                                    identity)
+                  (map ->parsed-day12))]
+    {:part1 (day12->part1 dirs)
+#_#_     :part2 (day12->part2 dirs)}))
+
+(defn incorrect?
+  [buses n]
+  (empty? (filter
+           (fn [[ndx x]]
+             (= 0 (mod (+ n ndx) x)))
+           buses)))
+
+(defn day13->part2 [start-time buses]
+  (let [check-vals (map (partial * (last (first buses)))
+                        (rest (range)))]
+    {:answer (first (drop-while (partial incorrect? (rest buses)) check-vals))
+     :buses buses}))
+
+(defn day13->part1 [start-time buses]
+  (->> (map (fn [x]
+              (let [y (mod start-time x)
+                    time (+ start-time (- x y))]
+                {:val (* x (- x y))
+                 :time time})) buses)
+       (sort-by :time <)
+       first
+       :val))
+
+(defn day13
+  [filename]
+  (let [[start-time buses] (util/simple-read-file filename)
+        parsed-buses (map math/->int (string/split buses #","))
+        parsed-start-time (math/->int start-time)
+        part1-buses (filter number? parsed-buses)
+        part2-buses (->> (map-indexed vector parsed-buses) (filter (comp number? second))) ]
+    {:part1 (day13->part1 parsed-start-time part1-buses)
+     :part2 (day13->part2 parsed-start-time part2-buses)}))
+
+(day13 "2020/example/day13.txt")
