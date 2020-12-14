@@ -505,25 +505,54 @@
      :part2 (part2-day10 part2-input)}))
 
 ;; day 11
-(defn ->coords [n index]
-  (let [up (inc (inc index))
-        down (dec index)]
-    (into []
-          (for [x (range down up)
-                y (range down up)
-                :let [idx (+ (* n x) y)]]
-            idx))))
+(defn ->coords [n [start-x start-y]]
+  (into []
+        (for [x (range (dec start-x) (inc (inc start-x)))
+              y (range (dec start-y) (inc (inc start-y)))
+              :when (or (not= x start-x)
+                        (not= y start-y))]
+          [x y])))
+
+(defn day11-action
+  [data x y char]
+  (let [get-coords (->coords 1 [x y])
+        surrounding-seats (frequencies (map #(get-in data % \.) get-coords))]
+    (cond
+      (= char \.) \.
+      (and (= char \L)
+           (= 0 (get surrounding-seats \# 0)))
+      \#
+      (and (= char \#)
+           (<= 4 (get surrounding-seats \# 0)))
+      \L
+
+      :default
+      char)))
+
+(defn get-character
+  [data index items]
+  (into [] (map-indexed (partial day11-action data index) items)))
+
+(defn day11-make-map
+  [data]
+  (into [] (map-indexed (partial get-character data) data)))
 
 (defn day11->part1
   [data]
-  (first data))
+  (loop [seat-change data
+         data-str ""]
+    (let [pass-through (day11-make-map seat-change)
+          strs (apply str (map (partial apply str) pass-through))]
+      (if (= data-str strs)
+        (frequencies strs)
+        (recur pass-through strs)))))
 
 (defn day11
   [file-name opts]
-  (let [n (-> (util/simple-read-file file-name) first count)
-        data (into [] (map-indexed vector (util/simple-read-file file-name false)))]
-    {:part1 (day11->part1 data)
-     :n n}))
+  (let [data (into [] (util/read-file file-name (partial into [])))
+        freqs-data (mapcat identity data)
+        part1 (day11->part1 data)]
+    {:part1 part1}))
 
 ;; day 12
 (def direction-change {:normal {:east {\L :north
@@ -625,5 +654,3 @@
         part2-buses (->> (map-indexed vector parsed-buses) (filter (comp number? second))) ]
     {:part1 (day13->part1 parsed-start-time part1-buses)
      :part2 (day13->part2 parsed-start-time part2-buses)}))
-
-(day13 "2020/example/day13.txt")
